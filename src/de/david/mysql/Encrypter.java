@@ -19,27 +19,27 @@ public class Encrypter {
     }
 
     public static String encryptSimpleAsymetric(String input, int factor, int shift) {
-        String encrypted = "";
+        StringBuilder encrypted = new StringBuilder();
         for (char c : input.toCharArray()) {
-            encrypted += (char)(c*factor+shift);
+            encrypted.append((char) (c * factor + shift));
         }
-        return encrypted;
+        return encrypted.toString();
     }
 
     public static String decryptSimpleAsymetric(String input, int factor, int shift) {
-        String decrypted = "";
+        StringBuilder decrypted = new StringBuilder();
         for (char c : input.toCharArray()) {
-            decrypted += (char)((c-shift)/factor);
+            decrypted.append((char) ((c - shift) / factor));
         }
-        return decrypted;
+        return decrypted.toString();
     }
     
     public String encryptSimpleAsymetric(String input) {
-        String encrypted = "";
+        StringBuilder encrypted = new StringBuilder();
         for (char c : input.toCharArray()) {
-            encrypted += (char)(c*factor+shift);
+            encrypted.append((char) (c * factor + shift));
         }
-        return encrypted;
+        return encrypted.toString();
     }
 
     public char encryptSimpleAsymetric(char input) {
@@ -47,20 +47,15 @@ public class Encrypter {
     }
 
     public String decryptSimpleAsymetric(String input) {
-        String decrypted = "";
+        StringBuilder decrypted = new StringBuilder();
         for (char c : input.toCharArray()) {
-            decrypted += (char)((c-shift)/factor);
+            decrypted.append((char) ((c - shift) / factor));
         }
-        return decrypted;
+        return decrypted.toString();
     }
 
     public char decryptSimpleAsymetric(char input) {
         return (char)((input-shift)/factor);
-    }
-
-    public void printKeys() {
-        System.out.println("factor: "+factor);
-        System.out.println("shift: "+shift);
     }
 
 }

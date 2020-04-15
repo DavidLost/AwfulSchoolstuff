@@ -18,8 +18,7 @@ public class Window extends JFrame {
     JButton clearInputButton = new JButton("clear");
     JButton clearOutputButton = new JButton("clear");
 
-    String[] encryptionCrackerList = {"method1", "method2"};
-    JComboBox<String> crackSelector = new JComboBox<>(encryptionCrackerList);
+    JCheckBox useEncryptionMethodCheck = new JCheckBox("allow use of encryption method");
 
     JButton crackButton = new JButton("crack input");
     JButton moveOutputButton = new JButton("output -> input");
@@ -58,7 +57,7 @@ public class Window extends JFrame {
         panel.add(decryptButton);
         panel.add(copyOutputButton);
         panel.add(clearOutputButton);
-        panel.add(crackSelector);
+        panel.add(useEncryptionMethodCheck);
         panel.add(crackButton);
         panel.add(moveOutputButton);
         add(panel);
@@ -79,11 +78,11 @@ public class Window extends JFrame {
 
     void onCrackButton() {
         new Thread(() -> {
-            switch (crackSelector.getSelectedIndex()) {
-                case 0: outputArea.setText(encryptionCracker.crackSimpleAsymetricEncryption(encrypter, inputArea.getText()));
-                    break;
-                case 1: outputArea.setText(formatCrackedStrings(encryptionCracker.crackSimpleAsymetricEncryptionWithoutEncrypter(inputArea.getText())));
-                    break;
+            if (useEncryptionMethodCheck.isSelected()) {
+                outputArea.setText(encryptionCracker.crackSimpleAsymetricEncryption(encrypter, inputArea.getText()));
+            }
+            else {
+                outputArea.setText(formatCrackedStrings(encryptionCracker.crackSimpleAsymetricEncryptionWithoutEncrypter(inputArea.getText())));
             }
         }).start();
     }

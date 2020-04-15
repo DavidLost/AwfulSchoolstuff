@@ -212,7 +212,9 @@ public class EncryptionCracker {
                 } catch (FileNotFoundException e) {
                     e.printStackTrace();
                 }
-                while (sc.hasNextLine()) {
+                while (true) {
+                    assert sc != null;
+                    if (!sc.hasNextLine()) break;
                     wordsList.add(sc.nextLine());                                                                                           //add words from files to the list
                 }
             }
