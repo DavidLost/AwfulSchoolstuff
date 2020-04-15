@@ -1,5 +1,7 @@
 package de.david.mysql;
 
+import javax.swing.*;
+import java.awt.event.KeyEvent;
 import java.io.File;
 import java.io.FileNotFoundException;
 import java.nio.file.Paths;
@@ -11,8 +13,10 @@ public class EncryptionCracker {
 
     public static final int AVERAGE_ASCII_VALUE = 105;
     public static final int AVERAGE_ASCII_RANGE = 88;
-    public static final int LOWEST_USED_CHARACTER = 32;
+    public static final int LOWEST_USED_CHARACTER = KeyEvent.VK_SPACE;
     public static final int HIGHEST_USED_CHARACTER = 128;
+
+    public String[] wordsList = getWordList();
 
     public String crackSimpleAsymetricEncryption(Encrypter encrypter, String encryptedString) {
 
@@ -32,76 +36,60 @@ public class EncryptionCracker {
     public String[] crackSimpleAsymetricEncryptionWithoutEncrypter(String encryptedString) {
 
         char[] chars = encryptedString.toCharArray();                           //create char array of the encrypted string
-        List<String> solutions = new ArrayList<>();
-        int factor = (int) Math.round(                                          //get the maximal unicode range from the chars after encryption.
+        int factorGuess = (int) Math.round(                                          //get the maximal unicode range from the chars after encryption.
                 (getMax(chars)-getMin(chars)) / (double)AVERAGE_ASCII_RANGE     //if all characters would be multiplied with 2, the range would also double
         );                                                                      //so by dividing with the average ascii range, when using "normal" characters, we should get an first aproximation of the multiplication factor
-        System.out.println("factor guess: "+factor);
-        double newFac = factor*getCorrectionFactor(chars);
-        factor = (int) Math.round(newFac);
-        if (factor < 1) factor = 1;
-        System.out.println("factor corrected: "+factor);
+        System.out.println("factor guess: "+factorGuess);
+        factorGuess = (int) Math.round(factorGuess*getCorrectionFactor(chars));
+        System.out.println("factor corrected: "+factorGuess);
         int minDiff = getMinDiff(chars);                                        //the minimal diffrence between 2 characters can be atmost the factor or a multiple of it
         System.out.println("minDiff: "+minDiff);                                //the larger the text, the higher the chance 2 chars are neighbours in the ascii table, and so the minimal diffrence would eqal the factor
-        int factorAnswer = -1;
-        int range = (int) Math.round(factor/4.0);
-        System.out.println("range: "+range);
-        int distance = Integer.MAX_VALUE;
-        for (int fac = factor-range; fac < factor+range; fac++) {               //to test our assumption, we are testing if minDiff is equal to a multiple of any number in a small range around the factor
-            for (int i = 1; i < 666/encryptedString.length(); i++) {
-                if (fac*i == minDiff) {
-                    if (Math.abs(minDiff-factor) < distance) {
-                        factorAnswer = fac;
-                        distance = minDiff-factor;
-                        System.out.println("factor confirmed: "+fac+" * "+i+" = "+minDiff);
-                        break;
-                    }
-                }
-            }
-        }
-        if (factorAnswer == -1) factorAnswer = minDiff;                                 //if we found nothing (mostly because, the factorguess was to bad and the range to small then) we just try with the minDiff
+        int factor = calculateFactor(factorGuess, chars.length, minDiff);
         System.out.println("min value: "+getMin(chars));
-        int shiftGuess1 = getMin(chars)-factorAnswer*LOWEST_USED_CHARACTER;             //3 diffrent ways to aproximate
-        int shiftGuess2 = getMax(chars)-factorAnswer*HIGHEST_USED_CHARACTER;
-        int shiftGuess3 = (int) (getAverage(chars)-factorAnswer*AVERAGE_ASCII_VALUE);
-        int shiftGuess = (shiftGuess1+shiftGuess2+shiftGuess3)/3;
-        System.out.println("shiftguess: "+shiftGuess1+" - "+shiftGuess2+" - "+shiftGuess3+" - "+shiftGuess);
+        System.out.println("factorA: " +factor);
+        return calculateSolutions(encryptedString, factor, getShiftGuess(chars, factor, 0));
+    }
+
+    private int getShiftGuess(char[] chars, int factor, int index) {
+        switch (index) {
+            case 0: return (
+                    (       getShiftGuess(chars, factor, 1)+
+                            getShiftGuess(chars, factor, 2)+
+                            getShiftGuess(chars, factor, 3)
+                    )/3
+            );
+            case 1: return getMin(chars)-factor*LOWEST_USED_CHARACTER;
+            case 2: return getMax(chars)-factor*HIGHEST_USED_CHARACTER;
+            case 3: return (int) (getAverage(chars)-factor*AVERAGE_ASCII_VALUE);
+        }
+        return 0;
+    }
+
+    private String getPriorityGuess(String encryptedString, int factor) {
+
         String priorityGuess = "";
-        if ((getMin(chars)-shiftGuess1)/factorAnswer == LOWEST_USED_CHARACTER) {
-            shiftGuess = shiftGuess1;
-            System.out.println("FACTOR WILL BE: "+factorAnswer+" - "+shiftGuess);
-            System.out.println("PRIORITY GUESS: "+Encrypter.decryptSimpleAsymetric(encryptedString, factorAnswer, shiftGuess));
-            priorityGuess = Encrypter.decryptSimpleAsymetric(encryptedString, factorAnswer, shiftGuess);
+        int shiftGuess1 = getShiftGuess(encryptedString.toCharArray(), factor, 1);
+        if ((getMin(encryptedString.toCharArray())-shiftGuess1)/factor == LOWEST_USED_CHARACTER) {
+            System.out.println("FACTOR WILL BE: "+factor+" - "+shiftGuess1);
+            System.out.println("PRIORITY GUESS: "+Encrypter.decryptSimpleAsymetric(encryptedString, factor, shiftGuess1));
+            priorityGuess = Encrypter.decryptSimpleAsymetric(encryptedString, factor, shiftGuess1);
         }
-        System.out.println("factorA: " +factorAnswer);
-        ArrayList<String> words = new ArrayList<>();
-        for (File file : new File(Paths.get("").toAbsolutePath().toString()+"\\src\\de\\david\\mysql").listFiles()) {   //find all files in the project folder
-            if (file.getAbsolutePath().endsWith(".txt")) {                                                                             //only search for .txt files
-                Scanner sc = null;
-                try {
-                    sc = new Scanner(file);
-                } catch (FileNotFoundException e) {
-                    e.printStackTrace();
-                }
-                while (sc.hasNextLine()) {
-                    words.add(sc.nextLine());                                                                                           //add words from files to the list
-                }
-            }
-        }
+        return priorityGuess;
+    }
+
+    private String[] calculateSolutions(String encryptedString, int factor, int shiftGuess) {
+        List<String> solutions = new ArrayList<>();
         int highestTrust = 0;
         int range2 = shiftGuess;
         if (shiftGuess < 0) {
-            shiftGuess = 10000;
-            range2 = 10000;
+            shiftGuess = Encrypter.MAX_SHIFT/2;
+            range2 = Encrypter.MAX_SHIFT/2;
         }
-        for (int i = shiftGuess-range2; i < shiftGuess+range2; i += factorAnswer) {
-            String decrypted = "";
-            for (char c : chars) {
-                decrypted += (char)((c-i)/factorAnswer);                                                //decrypt with our calculated values
-            }
+        for (int i = shiftGuess-range2; i < shiftGuess+range2; i += factor) {
+            String decrypted = Encrypter.decryptSimpleAsymetric(encryptedString, factor, shiftGuess);
             int wordAmount = 0;
             int validCharAmount = 0;
-            for (String word : words) {
+            for (String word : wordsList) {
                 for (char c : word.toCharArray()) {
                     if (c == 32) validCharAmount += 2;
                     if (c > 32 && c <= 128) validCharAmount++;
@@ -119,9 +107,32 @@ public class EncryptionCracker {
             }
             //System.out.println(i+" - "+decrypted+" - "+wordAmount);
         }
+        String priorityGuess = getPriorityGuess(encryptedString, factor);
         if (!priorityGuess.equals("")) solutions.add(0, priorityGuess);
         String[] solutionsArray = new String[solutions.size()];
+        JOptionPane.showMessageDialog(null, "Decryption Crack finished!");
         return solutions.toArray(solutionsArray);
+    }
+    
+    private int calculateFactor(int factorGuess, int length, int minDiff) {
+        int factor = -1;
+        int range = (int) Math.round(factorGuess/2.0);
+        System.out.println("range: "+range);
+        int distance = Integer.MAX_VALUE;
+        for (int fac = factorGuess-range; fac < factorGuess+range; fac++) {        //to test our assumption, we are testing if minDiff is equal to a multiple of any number in a small range around the factor
+            for (int i = 1; i < 666/length; i++) {
+                if (fac*i == minDiff) {
+                    if (Math.abs(fac-factorGuess) < distance) {                    //find the factor, which is a dividor of minDiff, and the closest one to our factorguess from before
+                        factor = fac;
+                        distance = fac-factorGuess;
+                        System.out.println("factor confirmed: "+fac+" * "+i+" = "+minDiff);
+                        break;
+                    }
+                }
+            }
+        }
+        if (factor == -1) factor = minDiff;                                         //if we found nothing (mostly because, the factorguess was to bad and the range to small then) we just try with the minDiff
+        return factor;
     }
 
     private double getCorrectionFactor(char[] chars) {
@@ -181,13 +192,33 @@ public class EncryptionCracker {
         int min = Integer.MAX_VALUE;
         for (char c : chars) {
             for (char d : chars) {
-                if (d-c > 0 && d-c < min) {
+                int diff = Math.abs(d-c);
+                if (diff > 0 && Math.abs(diff) < min) {
                     System.out.println("new min: "+(int)c+" - "+(int)d);
-                    min = d-c;
+                    min = diff;
                 }
             }
         }
         return min;
+    }
+
+    private String[] getWordList() {
+        ArrayList<String> wordsList = new ArrayList<>();
+        for (File file : new File(Paths.get("").toAbsolutePath().toString()+"\\src\\de\\david\\mysql").listFiles()) {   //find all files in the project folder
+            if (file.getAbsolutePath().endsWith(".txt")) {                                                                             //only search for .txt files
+                Scanner sc = null;
+                try {
+                    sc = new Scanner(file);
+                } catch (FileNotFoundException e) {
+                    e.printStackTrace();
+                }
+                while (sc.hasNextLine()) {
+                    wordsList.add(sc.nextLine());                                                                                           //add words from files to the list
+                }
+            }
+        }
+        String[] words = new String[wordsList.size()];
+        return wordsList.toArray(words);
     }
 
 }

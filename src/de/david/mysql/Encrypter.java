@@ -2,6 +2,22 @@ package de.david.mysql;
 
 public class Encrypter {
 
+    public static final int MAX_FACTOR = 500;
+    public static final int MAX_SHIFT = 5000;
+
+    public int factor;
+    public int shift;
+
+    public Encrypter(int factor, int shift) {
+        this.factor = factor;
+        this.shift = shift;
+    }
+
+    public Encrypter() {
+        this.factor = (int)(Math.random()*MAX_FACTOR)+1;
+        this.shift = (int)(Math.random()*MAX_SHIFT);
+    }
+
     public static String encryptSimpleAsymetric(String input, int factor, int shift) {
         String encrypted = "";
         for (char c : input.toCharArray()) {
@@ -17,9 +33,6 @@ public class Encrypter {
         }
         return decrypted;
     }
-
-    int factor = 387;//(int)(Math.random()*500)+1;
-    int shift = 163;//(int)(Math.random()*5000);
     
     public String encryptSimpleAsymetric(String input) {
         String encrypted = "";
