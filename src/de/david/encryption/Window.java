@@ -1,4 +1,4 @@
-package de.david.mysql;
+package de.david.encryption;
 
 import javax.swing.*;
 import java.awt.*;

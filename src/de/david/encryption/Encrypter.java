@@ -1,4 +1,7 @@
-package de.david.mysql;
+package de.david.encryption;
+
+import java.util.Random;
+import java.util.concurrent.ThreadLocalRandom;
 
 public class Encrypter {
 
@@ -14,8 +17,10 @@ public class Encrypter {
     }
 
     public Encrypter() {
-        this.factor = (int)(Math.random()*MAX_FACTOR)+1;
-        this.shift = (int)(Math.random()*MAX_SHIFT);
+        Random random = new Random(ThreadLocalRandom.current().nextInt());
+        this.factor = random.nextInt(MAX_FACTOR)+1;
+        this.shift = random.nextInt(MAX_SHIFT);
+        System.out.println("sucessfully created encrypter with factor: "+factor+" and shift: "+shift);
     }
 
     public static String encryptSimpleAsymetric(String input, int factor, int shift) {

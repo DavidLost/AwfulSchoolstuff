@@ -1,9 +1,10 @@
-package de.david.mysql;
+package de.david.encryption;
 
 import javax.swing.*;
 import java.awt.event.KeyEvent;
 import java.io.File;
 import java.io.FileNotFoundException;
+import java.io.InputStream;
 import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.List;
@@ -204,7 +205,12 @@ public class EncryptionCracker {
 
     private String[] getWordList() {
         ArrayList<String> wordsList = new ArrayList<>();
-        for (File file : new File(Paths.get("").toAbsolutePath().toString()+"\\src\\de\\david\\mysql").listFiles()) {   //find all files in the project folder
+        File dir = new File(Paths.get("").toAbsolutePath().toString()+
+                "\\EncryptionCracker\\src\\"+
+                getClass().getPackage().getName().replace(".", "\\")+
+                "\\resources");
+        System.out.println(dir.getAbsolutePath());
+        for (File file : dir.listFiles()) {   //find all files in the project folder
             if (file.getAbsolutePath().endsWith(".txt")) {                                                                             //only search for .txt files
                 Scanner sc = null;
                 try {

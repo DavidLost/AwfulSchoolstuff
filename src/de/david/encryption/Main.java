@@ -1,4 +1,4 @@
-package de.david.mysql;
+package de.david.encryption;
 
 public class Main {
 
